@@ -51,3 +51,4 @@ cdk.context.json
 # OS
 .DS_Store
 Thumbs.db
+VULNERABILITY_ANSWER_KEY.md
