@@ -1,0 +1,35 @@
+/home/kvdunn/.local/lib/python3.7/site-packages/jsii/__init__.py:45: UserWarning: WARNING: You are using python release 3.7.16, which has reached end-of-life! Support for EOL Python releases may be dropped in the future. Please consider upgrading to Python >= 3.8 as soon as possible.
+  f"WARNING: You are using python release {python_version()}, which has reached end-of-life! Support for EOL Python releases may be dropped in the future. Please consider upgrading to Python >= 3.8 as soon as possible.",
+Traceback (most recent call last):
+  File "app.py", line 2, in <module>
+    import aws_cdk as cdk
+  File "/home/kvdunn/.local/lib/python3.7/site-packages/aws_cdk/__init__.py", line 1422, in <module>
+    from ._jsii import *
+  File "/home/kvdunn/.local/lib/python3.7/site-packages/aws_cdk/_jsii/__init__.py", line 13, in <module>
+    import aws_cdk.asset_awscli_v1._jsii
+  File "/home/kvdunn/.local/lib/python3.7/site-packages/aws_cdk/asset_awscli_v1/_jsii/__init__.py", line 17, in <module>
+    "asset-awscli-v1@2.2.201.jsii.tgz",
+  File "/home/kvdunn/.local/lib/python3.7/site-packages/jsii/_runtime.py", line 55, in load
+    _kernel.load(assembly.name, assembly.version, os.fspath(assembly_path))
+  File "/home/kvdunn/.local/lib/python3.7/site-packages/jsii/_kernel/__init__.py", line 299, in load
+    self.provider.load(LoadRequest(name=name, version=version, tarball=tarball))
+  File "/home/kvdunn/.local/lib/python3.7/site-packages/jsii/_kernel/providers/process.py", line 354, in load
+    return self._process.send(request, LoadResponse)
+  File "/home/kvdunn/.local/lib/python3.7/site-packages/jsii/_utils.py", line 23, in wrapped
+    stored.append(fgetter(self))
+  File "/home/kvdunn/.local/lib/python3.7/site-packages/jsii/_kernel/providers/process.py", line 349, in _process
+    process.start()
+  File "/home/kvdunn/.local/lib/python3.7/site-packages/jsii/_kernel/providers/process.py", line 269, in start
+    env=environ,
+  File "/usr/lib64/python3.7/subprocess.py", line 800, in __init__
+    restore_signals, start_new_session)
+  File "/usr/lib64/python3.7/subprocess.py", line 1551, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'node': 'node'
+Exception ignored in: <function _NodeProcess.__del__ at 0x7f41a9aa8f80>
+Traceback (most recent call last):
+  File "/home/kvdunn/.local/lib/python3.7/site-packages/jsii/_kernel/providers/process.py", line 228, in __del__
+    self.stop()
+  File "/home/kvdunn/.local/lib/python3.7/site-packages/jsii/_kernel/providers/process.py", line 291, in stop
+    assert self._process.stdin is not None
+AttributeError: '_NodeProcess' object has no attribute '_process'
