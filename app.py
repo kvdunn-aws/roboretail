@@ -304,3 +304,10 @@ def health():
 # VULNERABILITY: Debug mode enabled
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+
+# New endpoint with SQL injection vulnerability
+@app.route('/api/user/<username>')
+def get_user_api(username):
+    query = f"SELECT * FROM users WHERE username = '{username}'"
+    result = db.execute(query).fetchone()
+    return jsonify(result) if result else jsonify({"error": "Not found"}), 404
