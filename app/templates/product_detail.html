@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - RoboRetail{% endblock %}
+
+{% block content %}
+<h1>{{ product.name }}</h1>
+
+<p><strong>Category:</strong> {{ product.category }}</p>
+<p><strong>Manufacturer:</strong> {{ product.manufacturer }}</p>
+<p><strong>Price:</strong> <span class="price">${{ "%.2f"|format(product.price) }}</span></p>
+<p><strong>In Stock:</strong> {{ product.stock_quantity }}</p>
+
+<h2>Description</h2>
+<p>{{ product.description }}</p>
+
+<h2>Customer Reviews</h2>
+
+{% if session.user_id %}
+<h3>Write a Review</h3>
+<form method="post" action="/review/{{ product.id }}">
+    <label>Rating:</label>
+    <select name="rating" required>
+        <option value="5">5 Stars</option>
+        <option value="4">4 Stars</option>
+        <option value="3">3 Stars</option>
+        <option value="2">2 Stars</option>
+        <option value="1">1 Star</option>
+    </select>
+    <textarea name="comment" placeholder="Your review..." rows="4"></textarea>
+    <button type="submit" class="btn">Submit Review</button>
+</form>
+{% else %}
+<p><a href="/login">Login</a> to write a review</p>
+{% endif %}
+
+<div>
+    {% for review in reviews %}
+    <div class="review">
+        <p class="rating">Rating: {{ '★' * review.rating }}{{ '☆' * (5 - review.rating) }}</p>
+        <p><strong>{{ review.username }}</strong> - {{ review.created_at }}</p>
+        <!-- VULNERABILITY: Stored XSS - comment rendered without escaping -->
+        <p>{{ review.comment | safe }}</p>
+    </div>
+    {% endfor %}
+</div>
+
+<p><a href="/products" class="btn">Back to Products</a></p>
+{% endblock %}
