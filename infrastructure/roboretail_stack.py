@@ -12,41 +12,54 @@ class RoboRetailStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # ========== VPC - Use Default or Create Simple One ==========
+        # ========== VPC - ISOLATED (NOT INTERNET ACCESSIBLE) ==========
         
-        # Option 1: Use existing default VPC (cheapest)
-        vpc = ec2.Vpc.from_lookup(self, "VPC", is_default=True)
+        # Create isolated VPC - NO internet access
+        vpc = ec2.Vpc(
+            self, "RoboRetailVPC",
+            vpc_name="roboretail-isolated-vpc",
+            ip_addresses=ec2.IpAddresses.cidr("10.0.0.0/16"),
+            max_azs=1,
+            nat_gateways=0,  # NO NAT Gateway - no internet access
+            subnet_configuration=[
+                ec2.SubnetConfiguration(
+                    name="Isolated",
+                    subnet_type=ec2.SubnetType.PRIVATE_ISOLATED,
+                    cidr_mask=24
+                )
+            ]
+        )
         
-        # ========== Security Group ==========
+        # ========== Security Group - INTERNAL ONLY ==========
         
-        # Single security group for the instance
+        # Security group - NO internet access, VPC-internal only
         sg = ec2.SecurityGroup(
             self, "InstanceSG",
             vpc=vpc,
-            security_group_name="roboretail-sg",
-            description="Security group for RoboRetail instance",
-            allow_all_outbound=True
+            security_group_name="roboretail-isolated-sg",
+            description="Security group for isolated RoboRetail instance",
+            allow_all_outbound=False  # NO outbound internet
         )
         
-        # Allow HTTP from anywhere
+        # Allow HTTP only from within VPC
         sg.add_ingress_rule(
-            ec2.Peer.any_ipv4(),
+            ec2.Peer.ipv4(vpc.vpc_cidr_block),
             ec2.Port.tcp(80),
-            "Allow HTTP from internet"
+            "Allow HTTP from VPC only"
         )
         
-        # Allow Flask app port
+        # Allow Flask app port only from within VPC
         sg.add_ingress_rule(
-            ec2.Peer.any_ipv4(),
+            ec2.Peer.ipv4(vpc.vpc_cidr_block),
             ec2.Port.tcp(5000),
-            "Allow Flask app from internet"
+            "Allow Flask from VPC only"
         )
         
-        # Allow SSH (for debugging)
+        # Allow SSH only from within VPC (for Session Manager)
         sg.add_ingress_rule(
-            ec2.Peer.any_ipv4(),
+            ec2.Peer.ipv4(vpc.vpc_cidr_block),
             ec2.Port.tcp(22),
-            "Allow SSH from internet"
+            "Allow SSH from VPC only"
         )
 
         # ========== IAM Role ==========
@@ -90,22 +103,23 @@ class RoboRetailStack(Stack):
             "echo 'Setup complete. Run /home/ec2-user/start-app.sh to start app'"
         )
 
-        # ========== EC2 Instance ==========
+        # ========== EC2 Instance - ISOLATED (NO PUBLIC IP) ==========
         
-        # Single t3.micro instance (free tier eligible)
+        # Single t3.micro instance in ISOLATED subnet (NO public IP)
         instance = ec2.Instance(
             self, "Instance",
-            instance_name="roboretail-instance",
+            instance_name="roboretail-isolated-instance",
             instance_type=ec2.InstanceType.of(
                 ec2.InstanceClass.BURSTABLE3,
                 ec2.InstanceSize.MICRO
             ),
             machine_image=ec2.MachineImage.latest_amazon_linux2023(),
             vpc=vpc,
-            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_ISOLATED),
             security_group=sg,
             role=role,
             user_data=user_data,
+            associate_public_ip_address=False,  # NO public IP - isolated
             block_devices=[
                 ec2.BlockDevice(
                     device_name="/dev/xvda",
@@ -120,25 +134,31 @@ class RoboRetailStack(Stack):
         # ========== Outputs ==========
         
         CfnOutput(
-            self, "InstanceId",
-            value=instance.instance_id,
-            description="EC2 Instance ID"
+            self, "VPCId",
+            value=vpc.vpc_id,
+            description="Isolated VPC ID"
         )
         
         CfnOutput(
-            self, "PublicIP",
-            value=instance.instance_public_ip,
-            description="Public IP address"
+            self, "InstanceId",
+            value=instance.instance_id,
+            description="EC2 Instance ID (access via Session Manager only)"
+        )
+        
+        CfnOutput(
+            self, "PrivateIP",
+            value=instance.instance_private_ip,
+            description="Private IP address (VPC-internal only)"
         )
         
         CfnOutput(
             self, "AppURL",
-            value=f"http://{instance.instance_public_ip}:5000",
-            description="Application URL"
+            value=f"http://{instance.instance_private_ip}:5000",
+            description="Application URL (accessible from within VPC only)"
         )
         
         CfnOutput(
-            self, "SSHCommand",
-            value=f"ssh -i <key.pem> ec2-user@{instance.instance_public_ip}",
-            description="SSH command (requires key pair)"
+            self, "SessionManagerCommand",
+            value=f"aws ssm start-session --target {instance.instance_id}",
+            description="Connect via AWS Session Manager (no SSH key needed)"
         )
