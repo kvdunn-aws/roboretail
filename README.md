@@ -1,6 +1,7 @@
 # RoboRetail
 
 A modern e-commerce platform for selling robots, built with Flask and SQLite.
+Note, this is a deliberately vulnerable web application - used for testing tools. 
 
 ## Overview
 
